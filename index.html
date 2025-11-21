@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grimório: Criador de Técnicas - Golden Age RPG</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&family=Yuji+Syuku&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+  <style>
+    /* --- CSS DO PREVIEW (Card da Técnica) --- */
+    #preview-container {
+      --bg-card: #0f1016; --border: rgba(255,255,255,0.1);
+      font-family: 'Inter', sans-serif; line-height: 1.5; color: #e0e0e0;
+    }
+    .ilimitado-container { max-width: 800px; margin: 0 auto; background: #050505; border: 1px solid #333; border-radius: 10px; overflow: hidden; padding-bottom: 30px; }
+    .ilimitado-header { text-align: center; padding: 40px 20px; background: linear-gradient(to bottom, #1a1a1a, #050505); border-bottom: 1px solid #333; }
+    .ilimitado-title { font-family: 'Yuji Syuku', serif; font-size: 3em; color: #fff; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 20px rgba(255,255,255,0.2); margin-bottom: 10px; line-height: 1; }
+    .ilimitado-subtitle { font-family: 'Inter', sans-serif; font-size: 0.9em; color: #888; text-transform: uppercase; letter-spacing: 2px; }
+    .ilimitado-divider { height: 2px; width: 60px; background: #a855f7; margin: 25px auto 0 auto; box-shadow: 0 0 10px #a855f7; }
+    .ilimitado-intro { padding: 40px; display: grid; grid-template-columns: 300px 1fr; gap: 40px; align-items: center; border-bottom: 1px solid #222; }
+    .ilimitado-image-container { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: fit-content; margin: 0 auto; }
+    .ilimitado-technique-image { display: block; width: 100%; max-width: 300px; height: auto; transition: transform 0.5s; }
+    .ilimitado-image-glow { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 100%); pointer-events: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; }
+    .ilimitado-tags { display: flex; gap: 10px; flex-wrap: wrap; }
+    .ilimitado-tag { font-size: 0.75em; text-transform: uppercase; font-weight: 700; color: #fff; background: #222; padding: 6px 12px; border-radius: 4px; border: 1px solid #444; letter-spacing: 1px; }
+    .ilimitado-description { font-size: 0.95em; color: #aaa; line-height: 1.8; margin: 0; text-align: justify; }
+    .ilimitado-techniques { padding: 40px; display: flex; flex-direction: column; gap: 40px; }
+    .ilimitado-technique-card { background: #0a0a0a; border: 1px solid #222; border-radius: 12px; overflow: hidden; display: grid; grid-template-columns: 250px 1fr; transition: all 0.3s ease; position: relative; }
+    .ilimitado-technique-header { background: #0f0f0f; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #222; gap: 20px; text-align: center; }
+    .ilimitado-cost-card { background: #141414; padding: 10px 20px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 100px; }
+    .ilimitado-cost-amount { font-family: 'Yuji Syuku', serif; font-size: 1.8em; color: #fff; line-height: 1; }
+    .ilimitado-cost-label { font-size: 0.7em; text-transform: uppercase; color: #666; font-weight: 700; letter-spacing: 1px; }
+    .ilimitado-technique-content { padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+    .ilimitado-stats { display: flex; gap: 30px; border-bottom: 1px solid #222; padding-bottom: 20px; margin-bottom: 10px; }
+    .ilimitado-stat { display: flex; flex-direction: column; gap: 5px; }
+    .ilimitado-stat-label { font-size: 0.7em; text-transform: uppercase; color: #666; font-weight: 700; letter-spacing: 1px; }
+    .ilimitado-stat-value { font-family: 'Inter', sans-serif; font-weight: 600; color: #ddd; font-size: 0.9em; }
+    .ilimitado-feature { display: flex; gap: 15px; align-items: flex-start; }
+    .ilimitado-requirements { margin-top: auto; padding-top: 20px; border-top: 1px solid #222; font-size: 0.85em; color: #666; }
+    
+    @media (max-width: 768px) {
+      .ilimitado-intro { grid-template-columns: 1fr; text-align: center; }
+      .ilimitado-tags { justify-content: center; }
+      .ilimitado-technique-card { grid-template-columns: 1fr; }
+      .ilimitado-technique-header { border-right: none; border-bottom: 1px solid #222; }
+      .ilimitado-stats { flex-wrap: wrap; justify-content: center; }
+    }
+
+    /* --- 2. CSS DA INTERFACE DO EDITOR --- */
+    :root {
+      --ui-bg: #121212; --ui-panel: #1e1e24; --ui-border: #333;
+      --ui-accent: #a855f7; --ui-accent-hover: #9333ea; --ui-text: #f0f0f0; --ui-dim: #888;
+    }
+
+    /* FIX DE SCROLL: TRAVA O CORPO */
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--ui-bg); color: var(--ui-text); }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 450px 1fr;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* EDITOR ESQUERDA */
+    .editor-pane {
+      background: var(--ui-panel);
+      border-right: 1px solid var(--ui-border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0; /* CRUCIAL PARA O SCROLL FLEX FUNCIONAR */
+      box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+
+    .editor-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--ui-border);
+      background: #16161b;
+      flex: 0 0 auto; /* Não encolhe */
+    }
+    .editor-header h1 { margin: 0; font-family: 'Yuji Syuku', serif; color: var(--ui-accent); font-size: 1.5em; }
+    .editor-header p { margin: 5px 0 0; font-size: 0.8em; color: var(--ui-dim); }
+
+    .editor-scroll-area {
+      flex: 1 1 auto; /* Cresce e Encolhe */
+      overflow-y: auto; /* Scroll aqui dentro */
+      padding: 20px;
+    }
+
+    /* Espaço no final para o botão não cortar */
+    .editor-content-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      padding-bottom: 120px; 
+    }
+
+    /* PREVIEW DIREITA */
+    .preview-pane {
+      background: #050505;
+      background-image: radial-gradient(#151515 1px, transparent 1px);
+      background-size: 20px 20px;
+      overflow-y: auto; /* Scroll independente */
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+      box-sizing: border-box;
+    }
+    #preview-box { width: 100%; max-width: 900px; }
+
+    /* COMPONENTES DE FORMULÁRIO */
+    .input-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 0.75em; font-weight: 700; color: var(--ui-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    input, textarea, select {
+      background: #0a0a0d; border: 1px solid var(--ui-border); color: #fff;
+      padding: 10px; border-radius: 6px; font-family: inherit; font-size: 0.9em;
+      transition: border-color 0.2s; width: 100%; box-sizing: border-box;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--ui-accent); }
+    textarea { resize: vertical; min-height: 80px; }
+    
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+
+    /* Tags Input */
+    .tags-input-container {
+      background: #0a0a0d; border: 1px solid var(--ui-border); border-radius: 6px; padding: 5px;
+      display: flex; flex-wrap: wrap; gap: 5px;
+    }
+    .tag-chip {
+      background: #333; font-size: 0.75em; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 5px;
+    }
+    .tag-chip span { cursor: pointer; color: #ff6b6b; font-weight: bold; }
+    #tag-input { border: none; background: transparent; padding: 5px; flex: 1; min-width: 60px; }
+    #tag-input:focus { border: none; outline: none; }
+
+    /* Cards de Sub-Técnica */
+    .tech-builder-item {
+      background: #25252e; border: 1px solid var(--ui-border); border-radius: 8px;
+      overflow: hidden; margin-bottom: 10px; transition: border-color 0.2s;
+    }
+    .tech-builder-header {
+      padding: 12px 15px; background: #2a2a35; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center; user-select: none;
+    }
+    .tech-builder-header span { font-weight: 600; font-size: 0.9em; }
+    
+    .tech-builder-body {
+      padding: 15px; display: none; border-top: 1px solid var(--ui-border); background: #1e1e24;
+    }
+    .tech-builder-item.open .tech-builder-body { display: flex; flex-direction: column; gap: 15px; }
+    .tech-builder-item.open .tech-builder-header { background: #333; color: var(--ui-accent); }
+
+    /* Color Picker */
+    .hex-picker-wrapper { display: flex; align-items: center; gap: 10px; }
+    input[type="color"] { -webkit-appearance: none; border: none; width: 40px; height: 40px; cursor: pointer; background: none; padding: 0; }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: 1px solid var(--ui-border); border-radius: 4px; }
+
+    /* Features */
+    .feature-list { display: flex; flex-direction: column; gap: 8px; }
+    .feature-item { display: grid; grid-template-columns: 1fr 2fr 30px; gap: 5px; align-items: start; }
+    .btn-mini { padding: 5px; background: #333; color: #ff6b6b; border: 1px solid #444; border-radius: 4px; cursor: pointer; display:flex; align-items:center; justify-content:center; }
+
+    /* Botões */
+    .btn { padding: 12px; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: filter 0.2s; width: 100%; }
+    .btn:hover { filter: brightness(1.1); }
+    .btn-primary { background: var(--ui-accent); color: #fff; }
+    .btn-secondary { background: #333; color: #ddd; }
+
+    /* Modal */
+    #import-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .modal-box { background: var(--ui-panel); padding: 25px; border-radius: 10px; width: 90%; max-width: 500px; border: 1px solid var(--ui-border); }
+
+    @media (max-width: 900px) {
+      .layout-grid { grid-template-columns: 1fr; height: auto; overflow: auto; display: block; }
+      html, body { height: auto; overflow: auto; }
+      .editor-pane { height: auto; min-width: 100%; border-right: none; border-bottom: 1px solid var(--ui-border); }
+      .editor-scroll-area { overflow: visible; }
+      .preview-pane { min-height: 100vh; padding: 20px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="import-modal">
+    <div class="modal-box">
+      <h3 style="margin-top:0; color:var(--ui-accent)">Importar Template</h3>
+      <p style="font-size:0.9em; color:#aaa">Cole o HTML de uma técnica existente para editar.</p>
+      <textarea id="import-area" style="height:150px; margin-bottom:15px;"></textarea>
+      <div class="row">
+        <button class="btn btn-primary" onclick="runImport()">Carregar</button>
+        <button class="btn btn-secondary" onclick="toggleModal(false)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout-grid">
+    
+    <div class="editor-pane">
+      <div class="editor-header">
+        <h1>Grimório</h1>
+        <p>Criador de Técnicas & Habilidades</p>
+        <div class="row" style="margin-top:15px;">
+          <button class="btn btn-secondary" style="padding:8px; font-size:0.8em;" onclick="toggleModal(true)">Importar HTML</button>
+          <button class="btn btn-secondary" style="padding:8px; font-size:0.8em;" onclick="resetData()">Limpar Tudo</button>
+        </div>
+      </div>
+      
+      <div class="editor-scroll-area">
+        <div class="editor-content-wrapper">
+          
+          <div class="input-group">
+            <label>Nome da Técnica Principal</label>
+            <input type="text" id="inp-main-title" oninput="updateState('title', this.value)" placeholder="Ex: Ilimitado">
+          </div>
+          
+          <div class="input-group">
+            <label>Subtítulo / Clã</label>
+            <input type="text" id="inp-main-sub" oninput="updateState('subtitle', this.value)" placeholder="Ex: Clã Gojo">
+          </div>
+
+          <div class="input-group">
+            <label>Imagem Principal (URL)</label>
+            <input type="text" id="inp-main-img" oninput="updateState('img', this.value)" placeholder="https://...">
+          </div>
+
+          <div class="input-group">
+            <label>Tags Obrigatórias</label>
+            <div style="display:flex; flex-direction:column; gap:10px; background:#15151a; padding:10px; border-radius:6px; border:1px solid #333;">
+                <div>
+                    <label style="font-size:0.7em; color:#888;">Tipo (Editável)</label>
+                    <input type="text" id="tag-type" oninput="updateTags()" placeholder="Ex: Linhagem Gojo">
+                </div>
+                <div>
+                    <label style="font-size:0.7em; color:#888;">Quest (Fixo)</label>
+                    <input type="text" value="Quest: Do Meu Sangue" disabled style="color:#aaa; border-style:dashed;">
+                </div>
+                <div>
+                    <label style="font-size:0.7em; color:#888;">Requisito de Feitiços (Número)</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="color:#fff; font-size:0.9em;">Feitiços:</span>
+                        <input type="number" id="tag-req" oninput="updateTags()" placeholder="20" style="width:80px;">
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Descrição Geral</label>
+            <textarea id="inp-main-desc" oninput="updateState('desc', this.value)" placeholder="Resumo da técnica..."></textarea>
+          </div>
+
+          <hr style="border:0; border-top:1px solid #333; width:100%;">
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="font-size:0.9em; color:#fff;">Habilidades / Golpes</label>
+            <button class="btn btn-primary" style="width:auto; padding:5px 10px; font-size:0.8em;" onclick="addSubTech()">+ Nova</button>
+          </div>
+
+          <div id="tech-list-container">
+            </div>
+
+          <hr style="border:0; border-top:1px solid #333; width:100%;">
+
+          <div class="input-group">
+            <label>Código Final</label>
+            <textarea id="output-code" readonly style="font-family:monospace; color:var(--success); border-color:var(--success); height:100px;"></textarea>
+            <button class="btn btn-primary" onclick="copyCode()">
+              <span class="material-icons-round">content_copy</span> Copiar HTML
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-pane">
+      <div id="preview-box">
+        </div>
+    </div>
+  </div>
+
+<script>
+  // --- ESTADO INICIAL ---
+  const defaultState = {
+    title: "Nome da Técnica",
+    subtitle: "Origem • Tipo",
+    img: "https://i.imgur.com/placeholder.jpg",
+    tags: { type: "Linhagem", quest: "Quest: Do Meu Sangue", req: "20" },
+    desc: "Descrição geral da técnica e seu funcionamento básico.",
+    subTechs: [
+      {
+        id: Date.now(),
+        name: "Habilidade 1",
+        kanji: "Romaji",
+        img: "",
+        cost: "100",
+        costLabel: "EA",
+        color: "#a855f7", 
+        range: "Curto (em metros)",
+        duration: "Instantâneo",
+        cooldown: "1 Turno",
+        desc: "Descrição da habilidade.",
+        features: [
+          { title: "Efeito", text: "O que ela faz mecanicamente." }
+        ],
+        req: "Nenhum"
+      }
+    ]
+  };
+
+  let state = JSON.parse(JSON.stringify(defaultState));
+
+  function toggleModal(show) {
+    document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
+  }
+
+  function toggleTechCard(id) {
+    const card = document.getElementById(`tech-card-${id}`);
+    card.classList.toggle('open');
+  }
+
+  function updateState(field, value) {
+    state[field] = value;
+    renderPreview();
+    generateCode();
+  }
+
+  function updateTags() {
+    state.tags.type = document.getElementById('tag-type').value;
+    state.tags.req = document.getElementById('tag-req').value;
+    renderPreview();
+    generateCode();
+  }
+
+  function updateSubTech(id, field, value) {
+    const tech = state.subTechs.find(t => t.id === id);
+    if(tech) {
+      tech[field] = value;
+      if(field === 'name') {
+          const headerSpan = document.querySelector(`#tech-card-${id} .tech-builder-header span`);
+          if(headerSpan) headerSpan.textContent = value;
+      }
+      renderPreview();
+      generateCode();
+    }
+  }
+
+  function addSubTech() {
+    state.subTechs.push({
+      id: Date.now(),
+      name: "Nova Habilidade",
+      kanji: "",
+      img: "",
+      cost: "0",
+      costLabel: "EA",
+      color: "#a855f7",
+      range: "-",
+      duration: "-",
+      cooldown: "-",
+      desc: "",
+      features: [],
+      req: ""
+    });
+    renderTechList();
+    setTimeout(() => {
+        const cards = document.querySelectorAll('.tech-builder-item');
+        if(cards.length > 0) cards[cards.length-1].classList.add('open');
+    }, 50);
+    renderPreview();
+    generateCode();
+  }
+
+  function deleteSubTech(id) {
+    if(confirm("Deletar essa habilidade?")) {
+      state.subTechs = state.subTechs.filter(t => t.id !== id);
+      renderTechList();
+      renderPreview();
+      generateCode();
+    }
+  }
+
+  function addFeature(techId) {
+    const tech = state.subTechs.find(t => t.id === techId);
+    tech.features.push({ title: "Título", text: "Efeito" });
+    const wasOpen = document.getElementById(`tech-card-${techId}`).classList.contains('open');
+    renderTechList();
+    if(wasOpen) document.getElementById(`tech-card-${techId}`).classList.add('open');
+    renderPreview();
+    generateCode();
+  }
+  
+  function updateFeature(techId, featIndex, field, value) {
+    const tech = state.subTechs.find(t => t.id === techId);
+    tech.features[featIndex][field] = value;
+    renderPreview();
+    generateCode();
+  }
+
+  function removeFeature(techId, featIndex) {
+    const tech = state.subTechs.find(t => t.id === techId);
+    tech.features.splice(featIndex, 1);
+    const wasOpen = document.getElementById(`tech-card-${techId}`).classList.contains('open');
+    renderTechList();
+    if(wasOpen) document.getElementById(`tech-card-${techId}`).classList.add('open');
+    renderPreview();
+    generateCode();
+  }
+
+  function renderEditorInputs() {
+    document.getElementById('inp-main-title').value = state.title;
+    document.getElementById('inp-main-sub').value = state.subtitle;
+    document.getElementById('inp-main-img').value = state.img;
+    document.getElementById('inp-main-desc').value = state.desc;
+    document.getElementById('tag-type').value = state.tags.type;
+    document.getElementById('tag-req').value = state.tags.req;
+    renderTechList();
+  }
+
+  function renderTechList() {
+    const container = document.getElementById('tech-list-container');
+    container.innerHTML = '';
+
+    state.subTechs.forEach(tech => {
+      const el = document.createElement('div');
+      el.className = `tech-builder-item`;
+      el.id = `tech-card-${tech.id}`;
+      
+      let featuresHTML = '';
+      tech.features.forEach((feat, idx) => {
+        featuresHTML += `
+          <div class="feature-item">
+            <input type="text" placeholder="Título" value="${feat.title}" oninput="updateFeature(${tech.id}, ${idx}, 'title', this.value)">
+            <input type="text" placeholder="Descrição" value="${feat.text}" oninput="updateFeature(${tech.id}, ${idx}, 'text', this.value)">
+            <button class="btn-mini" onclick="removeFeature(${tech.id}, ${idx})">×</button>
+          </div>
+        `;
+      });
+
+      el.innerHTML = `
+        <div class="tech-builder-header" onclick="toggleTechCard(${tech.id})">
+          <span>${tech.name}</span>
+          <span class="material-icons-round" onclick="event.stopPropagation(); deleteSubTech(${tech.id})" style="color:#ff4444; cursor:pointer;">delete</span>
+        </div>
+        <div class="tech-builder-body">
+          <div class="row">
+            <div class="col"><label>Nome</label><input type="text" value="${tech.name}" oninput="updateSubTech(${tech.id}, 'name', this.value)"></div>
+            <div class="col"><label>Romaji</label><input type="text" value="${tech.kanji}" oninput="updateSubTech(${tech.id}, 'kanji', this.value)"></div>
+          </div>
+          <div>
+            <label>Cor do Tema (Hex)</label>
+            <div class="hex-picker-wrapper">
+                <input type="color" value="${tech.color}" oninput="updateSubTech(${tech.id}, 'color', this.value)">
+                <input type="text" value="${tech.color}" oninput="updateSubTech(${tech.id}, 'color', this.value)" style="width:100px;">
+            </div>
+          </div>
+          <div class="input-group"><label>Imagem (URL)</label><input type="text" value="${tech.img}" oninput="updateSubTech(${tech.id}, 'img', this.value)"></div>
+          <div class="row">
+            <div class="col"><label>Custo</label><input type="text" value="${tech.cost}" oninput="updateSubTech(${tech.id}, 'cost', this.value)"></div>
+            <div class="col"><label>Label Custo</label><input type="text" value="${tech.costLabel}" oninput="updateSubTech(${tech.id}, 'costLabel', this.value)"></div>
+          </div>
+          <div class="row">
+            <div class="col"><label>Alcance</label><input type="text" value="${tech.range}" placeholder="em metros" oninput="updateSubTech(${tech.id}, 'range', this.value)"></div>
+            <div class="col"><label>Duração</label><input type="text" value="${tech.duration}" oninput="updateSubTech(${tech.id}, 'duration', this.value)"></div>
+            <div class="col"><label>Recarga</label><input type="text" value="${tech.cooldown}" oninput="updateSubTech(${tech.id}, 'cooldown', this.value)"></div>
+          </div>
+          <div class="input-group"><label>Descrição</label><textarea oninput="updateSubTech(${tech.id}, 'desc', this.value)">${tech.desc}</textarea></div>
+          <div class="input-group"><label>Efeitos / Regras</label><div class="feature-list">${featuresHTML}</div><button class="btn btn-secondary" style="padding:5px; margin-top:5px; font-size:0.8em;" onclick="addFeature(${tech.id})">+ Efeito</button></div>
+          <div class="input-group"><label>Requisitos</label><input type="text" value="${tech.req}" oninput="updateSubTech(${tech.id}, 'req', this.value)"></div>
+        </div>
+      `;
+      container.appendChild(el);
+    });
+  }
+
+  function renderPreview() {
+    const container = document.getElementById('preview-box');
+    
+    const tagsHTML = `
+        <div class="ilimitado-tag">${state.tags.type}</div>
+        <div class="ilimitado-tag">Quest: Do Meu Sangue</div>
+        <div class="ilimitado-tag">Feitiços: ${state.tags.req}</div>
+    `;
+
+    let techniquesHTML = '';
+    state.subTechs.forEach(t => {
+      let featuresHTML = '';
+      t.features.forEach(f => {
+        featuresHTML += `<div class="ilimitado-feature"><div style="color:#ccc;line-height:1.6"><strong style="color:#fff">${f.title}:</strong> ${f.text}</div></div>`;
+      });
+
+      const imgHTML = t.img ? `<div style="display:flex;align-items:center;justify-content:center"><div class="ilimitado-image-container"><img src="${t.img}" alt="${t.name}" class="ilimitado-technique-image" style="max-width:180px"><div class="ilimitado-image-glow"></div></div></div>` : '';
+
+      const hex = t.color || '#a855f7';
+      const bgStyle = `linear-gradient(135deg, ${hex}1A, ${hex}05)`;
+      const borderStyle = `1px solid ${hex}33`;
+      const textShadow = `0 0 15px ${hex}4D`;
+      const shadow = `0 0 30px ${hex}0D`;
+
+      techniquesHTML += `
+        <div class="ilimitado-technique-card" style="border-color: ${hex}33; box-shadow: ${shadow};">
+          <div class="ilimitado-technique-header" style="background: ${bgStyle}; border-right: ${borderStyle};">
+            ${imgHTML}
+            <div style="display:flex;flex-direction:column;justify-content:center;gap:12px">
+              <div style="display:flex;align-items:center;gap:10px; justify-content:center;">
+                <h3 style="margin:0; color:${hex}; font-size:1.5em; text-shadow:${textShadow};">${t.name}</h3>
+                <span style="font-size:0.9em;opacity:0.8">${t.kanji}</span>
+              </div>
+              <div class="ilimitado-cost-card">
+                <span class="ilimitado-cost-amount" style="color:${hex};">${t.cost}</span>
+                <span class="ilimitado-cost-label">${t.costLabel}</span>
+              </div>
+            </div>
+          </div>
+          <div class="ilimitado-technique-content">
+            <div class="ilimitado-stats">
+              <div class="ilimitado-stat"><div class="ilimitado-stat-label">Alcance</div><div class="ilimitado-stat-value">${t.range}</div></div>
+              <div class="ilimitado-stat"><div class="ilimitado-stat-label">Duração</div><div class="ilimitado-stat-value">${t.duration}</div></div>
+              <div class="ilimitado-stat"><div class="ilimitado-stat-label">Recarga</div><div class="ilimitado-stat-value">${t.cooldown}</div></div>
+            </div>
+            <p class="ilimitado-description">${t.desc.replace(/\n/g, '<br>')}</p>
+            <div style="display:flex;flex-direction:column;gap:18px;margin-bottom:25px">${featuresHTML}</div>
+            <div class="ilimitado-requirements"><strong style="color:#fff">Requisitos:</strong> ${t.req}</div>
+          </div>
+        </div>`;
+    });
+
+    const html = `
+      <div class="ilimitado-container">
+        <div class="ilimitado-header">
+          <div class="ilimitado-title">${state.title}</div>
+          <div class="ilimitado-subtitle">${state.subtitle}</div>
+          <div class="ilimitado-divider"></div>
+        </div>
+        <div class="ilimitado-intro">
+          ${state.img ? `<div style="display:flex;align-items:center;justify-content:center"><div class="ilimitado-image-container"><img src="${state.img}" alt="${state.title}" class="ilimitado-technique-image"><div class="ilimitado-image-glow"></div></div></div>` : ''}
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div class="ilimitado-tags">${tagsHTML}</div>
+            <p class="ilimitado-description">${state.desc.replace(/\n/g, '<br>')}</p>
+          </div>
+        </div>
+        <div class="ilimitado-techniques">${techniquesHTML}</div>
+      </div>
+    `;
+    container.innerHTML = html;
+  }
+
+  function generateCode() {
+    const container = document.getElementById('preview-box');
+    const coreHTML = container.innerHTML;
+    const fullHTML = `<html lang="pt-br"><head><link rel="stylesheet" href="https://gaaaaaaaaabs.github.io/goldenagerepositor.io/ilimitado-technique.css"></head><body>${coreHTML}</body></html>`;
+    const minified = fullHTML.replace(/(\r\n|\n|\r)/gm, "").replace(/\s+/g, ' ').replace(/> </g, '><');
+    document.getElementById('output-code').value = minified;
+  }
+
+  function copyCode() {
+    document.getElementById('output-code').select();
+    document.execCommand('copy');
+    alert("Código copiado!");
+  }
+
+  function runImport() {
+    const code = document.getElementById('import-area').value;
+    if(!code) return alert("Cole o código.");
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(code, 'text/html');
+
+    state.title = doc.querySelector('.ilimitado-title')?.textContent || '';
+    state.subtitle = doc.querySelector('.ilimitado-subtitle')?.textContent || '';
+    state.img = doc.querySelector('.ilimitado-intro .ilimitado-technique-image')?.src || '';
+    state.desc = doc.querySelector('.ilimitado-intro .ilimitado-description')?.innerHTML.replace(/<br>/g, '\n') || '';
+    
+    const tagEls = doc.querySelectorAll('.ilimitado-tag');
+    if(tagEls.length > 0) state.tags.type = tagEls[0].textContent;
+    if(tagEls.length > 2) state.tags.req = tagEls[2].textContent.replace('Feitiços: ', '').trim();
+
+    state.subTechs = [];
+    doc.querySelectorAll('.ilimitado-technique-card').forEach(card => {
+      let color = "#a855f7"; 
+      const h3 = card.querySelector('h3');
+      if(h3 && h3.style.color) {
+          color = h3.style.color;
+          if(color.startsWith('rgb')) {
+             const rgb = color.match(/\d+/g);
+             if(rgb) color = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+          }
+      }
+
+      const features = [];
+      card.querySelectorAll('.ilimitado-feature').forEach(feat => {
+        const strong = feat.querySelector('strong');
+        const title = strong ? strong.textContent.replace(':', '') : '';
+        const text = feat.querySelector('div').textContent.replace(strong ? strong.textContent : '', '').trim();
+        features.push({ title, text });
+      });
+
+      state.subTechs.push({
+        id: Date.now() + Math.random(),
+        name: card.querySelector('h3')?.textContent || '',
+        kanji: card.querySelector('.ilimitado-technique-header span')?.textContent || '',
+        img: card.querySelector('.ilimitado-technique-image')?.src || '',
+        cost: card.querySelector('.ilimitado-cost-amount')?.textContent || '',
+        costLabel: card.querySelector('.ilimitado-cost-label')?.textContent || '',
+        color: color, 
+        range: card.querySelector('.ilimitado-stat:nth-child(1) .ilimitado-stat-value')?.textContent || '',
+        duration: card.querySelector('.ilimitado-stat:nth-child(2) .ilimitado-stat-value')?.textContent || '',
+        cooldown: card.querySelector('.ilimitado-stat:nth-child(3) .ilimitado-stat-value')?.textContent || '',
+        desc: card.querySelector('.ilimitado-description')?.innerHTML.replace(/<br>/g, '\n') || '',
+        features: features,
+        req: card.querySelector('.ilimitado-requirements')?.textContent.replace('Requisitos:', '').trim() || ''
+      });
+    });
+
+    renderEditorInputs();
+    renderPreview();
+    generateCode();
+    toggleModal(false);
+  }
+
+  function resetData() {
+    if(confirm("Apagar tudo?")) {
+      state = JSON.parse(JSON.stringify(defaultState));
+      renderEditorInputs();
+      renderPreview();
+      generateCode();
+    }
+  }
+
+  renderEditorInputs();
+  renderPreview();
+  generateCode();
+</script>
+</body>
+</html>
