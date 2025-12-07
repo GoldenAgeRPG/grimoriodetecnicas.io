@@ -54,13 +54,23 @@
       --ui-accent: #a855f7; --ui-accent-hover: #9333ea; --ui-text: #f0f0f0; --ui-dim: #888;
     }
 
-    /* FIX DE SCROLL: TRAVA O CORPO */
-    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--ui-bg); color: var(--ui-text); }
+    /* ALTERADO: Permitir que o body cresça para calcular a altura */
+    html, body { 
+        height: auto; 
+        min-height: 100vh; 
+        margin: 0; 
+        padding: 0; 
+        font-family: 'Inter', sans-serif; 
+        background-color: var(--ui-bg); 
+        color: var(--ui-text); 
+        overflow-y: auto; /* Importante para o cálculo */
+    }
 
     .layout-grid {
       display: grid;
       grid-template-columns: 450px 1fr;
-      height: 100%;
+      /* Removido height: 100% fixo */
+      min-height: 100vh;
       width: 100%;
     }
 
@@ -70,8 +80,9 @@
       border-right: 1px solid var(--ui-border);
       display: flex;
       flex-direction: column;
-      height: 100%;
-      min-height: 0; /* CRUCIAL PARA O SCROLL FLEX FUNCIONAR */
+      /* Removido scroll interno forçado para deixar a página crescer */
+      height: auto; 
+      min-height: 100vh;
       box-shadow: 5px 0 15px rgba(0,0,0,0.3);
       z-index: 10;
     }
@@ -80,14 +91,14 @@
       padding: 20px;
       border-bottom: 1px solid var(--ui-border);
       background: #16161b;
-      flex: 0 0 auto; /* Não encolhe */
+      flex: 0 0 auto; 
     }
     .editor-header h1 { margin: 0; font-family: 'Yuji Syuku', serif; color: var(--ui-accent); font-size: 1.5em; }
     .editor-header p { margin: 5px 0 0; font-size: 0.8em; color: var(--ui-dim); }
 
     .editor-scroll-area {
-      flex: 1 1 auto; /* Cresce e Encolhe */
-      overflow-y: auto; /* Scroll aqui dentro */
+      flex: 1 1 auto; 
+      /* Removido overflow-y: auto para deixar o iframe calcular a altura total */
       padding: 20px;
     }
 
@@ -104,8 +115,8 @@
       background: #050505;
       background-image: radial-gradient(#151515 1px, transparent 1px);
       background-size: 20px 20px;
-      overflow-y: auto; /* Scroll independente */
-      height: 100%;
+      height: auto; /* Altura automática */
+      min-height: 100vh;
       display: flex;
       justify-content: center;
       padding: 40px;
@@ -318,6 +329,23 @@
 
   let state = JSON.parse(JSON.stringify(defaultState));
 
+  // --- LÓGICA DE RESIZE (COPIADA EXATAMENTE DO EXEMPLO FUNCIONAL) ---
+  const targetOrigin = 'https://goldenagejjkrpg.forumeiros.com';
+      
+  function sendHeight() {
+    // Cálculo de altura mais robusto para iframes
+    const newHeight = Math.max(
+        document.body.scrollHeight, 
+        document.body.offsetHeight, 
+        document.documentElement.clientHeight, 
+        document.documentElement.scrollHeight, 
+        document.documentElement.offsetHeight
+    );
+    // Envia no formato exato que o fórum espera
+    window.parent.postMessage({ frameHeight: newHeight }, "*");
+  }
+  // -----------------------------------------------------------------
+
   function toggleModal(show) {
     document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
   }
@@ -325,7 +353,7 @@
   function toggleTechCard(id) {
     const card = document.getElementById(`tech-card-${id}`);
     card.classList.toggle('open');
-    sendHeight(); // Atualiza altura ao abrir/fechar card
+    setTimeout(sendHeight, 50); // Resize ao abrir card
   }
 
   function updateState(field, value) {
@@ -353,6 +381,7 @@
       }
       renderPreview();
       generateCode();
+      sendHeight();
     }
   }
 
@@ -376,7 +405,7 @@
     setTimeout(() => {
         const cards = document.querySelectorAll('.tech-builder-item');
         if(cards.length > 0) cards[cards.length-1].classList.add('open');
-        sendHeight(); // Atualiza altura ao adicionar
+        sendHeight(); // Resize ao adicionar
     }, 50);
     renderPreview();
     generateCode();
@@ -388,7 +417,7 @@
       renderTechList();
       renderPreview();
       generateCode();
-      sendHeight(); // Atualiza altura ao deletar
+      sendHeight(); // Resize ao deletar
     }
   }
 
@@ -408,6 +437,7 @@
     tech.features[featIndex][field] = value;
     renderPreview();
     generateCode();
+    sendHeight();
   }
 
   function removeFeature(techId, featIndex) {
@@ -643,16 +673,6 @@
     }
   }
 
-  // --- LÓGICA DE RESIZE (COPIADA DO CÓDIGO FUNCIONAL) ---
-  const targetOrigin = 'https://goldenagejjkrpg.forumeiros.com';
-      
-  function sendHeight() {
-    // Note que usamos document.documentElement.scrollHeight em vez de body
-    const newHeight = document.documentElement.scrollHeight;
-    // O segredo está aqui: enviar um OBJETO { frameHeight: X } e não apenas X
-    window.parent.postMessage({ frameHeight: newHeight }, targetOrigin);
-  }
-
   const resizeObserver = new ResizeObserver(entries => { sendHeight(); });
   resizeObserver.observe(document.body);
 
@@ -663,6 +683,7 @@
   
   // Garante que o resize rode ao iniciar
   setTimeout(sendHeight, 100);
+  setTimeout(sendHeight, 1000); // Check secundário
 </script>
 </body>
 </html>
