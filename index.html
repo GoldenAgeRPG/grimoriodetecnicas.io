@@ -54,7 +54,7 @@
       --ui-accent: #a855f7; --ui-accent-hover: #9333ea; --ui-text: #f0f0f0; --ui-dim: #888;
     }
 
-    /* ALTERADO: Permitir que o body cresça para calcular a altura */
+    /* FIX DE RESIZE: Altura automática */
     html, body { 
         height: auto; 
         min-height: 100vh; 
@@ -63,13 +63,12 @@
         font-family: 'Inter', sans-serif; 
         background-color: var(--ui-bg); 
         color: var(--ui-text); 
-        overflow-y: auto; /* Importante para o cálculo */
+        overflow-y: auto; 
     }
 
     .layout-grid {
       display: grid;
       grid-template-columns: 450px 1fr;
-      /* Removido height: 100% fixo */
       min-height: 100vh;
       width: 100%;
     }
@@ -80,7 +79,6 @@
       border-right: 1px solid var(--ui-border);
       display: flex;
       flex-direction: column;
-      /* Removido scroll interno forçado para deixar a página crescer */
       height: auto; 
       min-height: 100vh;
       box-shadow: 5px 0 15px rgba(0,0,0,0.3);
@@ -98,11 +96,9 @@
 
     .editor-scroll-area {
       flex: 1 1 auto; 
-      /* Removido overflow-y: auto para deixar o iframe calcular a altura total */
       padding: 20px;
     }
 
-    /* Espaço no final para o botão não cortar */
     .editor-content-wrapper {
       display: flex;
       flex-direction: column;
@@ -115,7 +111,7 @@
       background: #050505;
       background-image: radial-gradient(#151515 1px, transparent 1px);
       background-size: 20px 20px;
-      height: auto; /* Altura automática */
+      height: auto; 
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -139,7 +135,6 @@
     .row { display: flex; gap: 10px; }
     .col { flex: 1; }
 
-    /* Tags Input */
     .tags-input-container {
       background: #0a0a0d; border: 1px solid var(--ui-border); border-radius: 6px; padding: 5px;
       display: flex; flex-wrap: wrap; gap: 5px;
@@ -299,7 +294,10 @@
   </div>
 
 <script>
-  // --- ESTADO INICIAL ---
+  // --- CHAVE PARA SALVAR NO NAVEGADOR ---
+  const STORAGE_KEY = 'grimorio_data_v1';
+
+  // --- ESTADO INICIAL PADRÃO ---
   const defaultState = {
     title: "Nome da Técnica",
     subtitle: "Origem • Tipo",
@@ -327,13 +325,28 @@
     ]
   };
 
-  let state = JSON.parse(JSON.stringify(defaultState));
+  // --- LÓGICA DE CARREGAMENTO (LOCAL STORAGE) ---
+  let state;
+  const savedData = localStorage.getItem(STORAGE_KEY);
+  if (savedData) {
+      try {
+          state = JSON.parse(savedData);
+      } catch (e) {
+          state = JSON.parse(JSON.stringify(defaultState));
+      }
+  } else {
+      state = JSON.parse(JSON.stringify(defaultState));
+  }
 
-  // --- LÓGICA DE RESIZE (COPIADA EXATAMENTE DO EXEMPLO FUNCIONAL) ---
+  // --- LÓGICA DE SALVAMENTO ---
+  function saveLocal() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  // --- LÓGICA DE RESIZE (PARA O FÓRUM) ---
   const targetOrigin = 'https://goldenagejjkrpg.forumeiros.com';
       
   function sendHeight() {
-    // Cálculo de altura mais robusto para iframes
     const newHeight = Math.max(
         document.body.scrollHeight, 
         document.body.offsetHeight, 
@@ -341,10 +354,9 @@
         document.documentElement.scrollHeight, 
         document.documentElement.offsetHeight
     );
-    // Envia no formato exato que o fórum espera
     window.parent.postMessage({ frameHeight: newHeight }, "*");
   }
-  // -----------------------------------------------------------------
+  // ------------------------------------------
 
   function toggleModal(show) {
     document.getElementById('import-modal').style.display = show ? 'flex' : 'none';
@@ -353,11 +365,12 @@
   function toggleTechCard(id) {
     const card = document.getElementById(`tech-card-${id}`);
     card.classList.toggle('open');
-    setTimeout(sendHeight, 50); // Resize ao abrir card
+    setTimeout(sendHeight, 50); 
   }
 
   function updateState(field, value) {
     state[field] = value;
+    saveLocal(); // Salva
     renderPreview();
     generateCode();
     sendHeight();
@@ -366,6 +379,7 @@
   function updateTags() {
     state.tags.type = document.getElementById('tag-type').value;
     state.tags.req = document.getElementById('tag-req').value;
+    saveLocal(); // Salva
     renderPreview();
     generateCode();
     sendHeight();
@@ -379,6 +393,7 @@
           const headerSpan = document.querySelector(`#tech-card-${id} .tech-builder-header span`);
           if(headerSpan) headerSpan.textContent = value;
       }
+      saveLocal(); // Salva
       renderPreview();
       generateCode();
       sendHeight();
@@ -401,11 +416,12 @@
       features: [],
       req: ""
     });
+    saveLocal(); // Salva
     renderTechList();
     setTimeout(() => {
         const cards = document.querySelectorAll('.tech-builder-item');
         if(cards.length > 0) cards[cards.length-1].classList.add('open');
-        sendHeight(); // Resize ao adicionar
+        sendHeight(); 
     }, 50);
     renderPreview();
     generateCode();
@@ -414,16 +430,18 @@
   function deleteSubTech(id) {
     if(confirm("Deletar essa habilidade?")) {
       state.subTechs = state.subTechs.filter(t => t.id !== id);
+      saveLocal(); // Salva
       renderTechList();
       renderPreview();
       generateCode();
-      sendHeight(); // Resize ao deletar
+      sendHeight(); 
     }
   }
 
   function addFeature(techId) {
     const tech = state.subTechs.find(t => t.id === techId);
     tech.features.push({ title: "Título", text: "Efeito" });
+    saveLocal(); // Salva
     const wasOpen = document.getElementById(`tech-card-${techId}`).classList.contains('open');
     renderTechList();
     if(wasOpen) document.getElementById(`tech-card-${techId}`).classList.add('open');
@@ -435,6 +453,7 @@
   function updateFeature(techId, featIndex, field, value) {
     const tech = state.subTechs.find(t => t.id === techId);
     tech.features[featIndex][field] = value;
+    saveLocal(); // Salva
     renderPreview();
     generateCode();
     sendHeight();
@@ -443,6 +462,7 @@
   function removeFeature(techId, featIndex) {
     const tech = state.subTechs.find(t => t.id === techId);
     tech.features.splice(featIndex, 1);
+    saveLocal(); // Salva
     const wasOpen = document.getElementById(`tech-card-${techId}`).classList.contains('open');
     renderTechList();
     if(wasOpen) document.getElementById(`tech-card-${techId}`).classList.add('open');
@@ -656,6 +676,7 @@
       });
     });
 
+    saveLocal(); // Salva após importar
     renderEditorInputs();
     renderPreview();
     generateCode();
@@ -666,6 +687,7 @@
   function resetData() {
     if(confirm("Apagar tudo?")) {
       state = JSON.parse(JSON.stringify(defaultState));
+      saveLocal(); // Salva o estado limpo
       renderEditorInputs();
       renderPreview();
       generateCode();
@@ -683,7 +705,7 @@
   
   // Garante que o resize rode ao iniciar
   setTimeout(sendHeight, 100);
-  setTimeout(sendHeight, 1000); // Check secundário
+  setTimeout(sendHeight, 1000); 
 </script>
 </body>
 </html>
