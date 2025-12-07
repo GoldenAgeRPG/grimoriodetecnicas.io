@@ -325,12 +325,14 @@
   function toggleTechCard(id) {
     const card = document.getElementById(`tech-card-${id}`);
     card.classList.toggle('open');
+    sendHeight(); // Atualiza altura ao abrir/fechar card
   }
 
   function updateState(field, value) {
     state[field] = value;
     renderPreview();
     generateCode();
+    sendHeight();
   }
 
   function updateTags() {
@@ -338,6 +340,7 @@
     state.tags.req = document.getElementById('tag-req').value;
     renderPreview();
     generateCode();
+    sendHeight();
   }
 
   function updateSubTech(id, field, value) {
@@ -373,6 +376,7 @@
     setTimeout(() => {
         const cards = document.querySelectorAll('.tech-builder-item');
         if(cards.length > 0) cards[cards.length-1].classList.add('open');
+        sendHeight(); // Atualiza altura ao adicionar
     }, 50);
     renderPreview();
     generateCode();
@@ -384,6 +388,7 @@
       renderTechList();
       renderPreview();
       generateCode();
+      sendHeight(); // Atualiza altura ao deletar
     }
   }
 
@@ -395,6 +400,7 @@
     if(wasOpen) document.getElementById(`tech-card-${techId}`).classList.add('open');
     renderPreview();
     generateCode();
+    sendHeight();
   }
   
   function updateFeature(techId, featIndex, field, value) {
@@ -412,6 +418,7 @@
     if(wasOpen) document.getElementById(`tech-card-${techId}`).classList.add('open');
     renderPreview();
     generateCode();
+    sendHeight();
   }
 
   function renderEditorInputs() {
@@ -623,6 +630,7 @@
     renderPreview();
     generateCode();
     toggleModal(false);
+    sendHeight();
   }
 
   function resetData() {
@@ -631,19 +639,30 @@
       renderEditorInputs();
       renderPreview();
       generateCode();
+      sendHeight();
     }
   }
 
-  // --- AUTO-RESIZE IFRAME (ADIÇÃO) ---
-  // Isso enviará a altura do documento para o fórum/pai a cada vez que o tamanho mudar
-  const resizeObserver = new ResizeObserver(entries => {
-    window.parent.postMessage(document.body.scrollHeight, "*");
-  });
+  // --- LÓGICA DE RESIZE (COPIADA DO CÓDIGO FUNCIONAL) ---
+  const targetOrigin = 'https://goldenagejjkrpg.forumeiros.com';
+      
+  function sendHeight() {
+    // Note que usamos document.documentElement.scrollHeight em vez de body
+    const newHeight = document.documentElement.scrollHeight;
+    // O segredo está aqui: enviar um OBJETO { frameHeight: X } e não apenas X
+    window.parent.postMessage({ frameHeight: newHeight }, targetOrigin);
+  }
+
+  const resizeObserver = new ResizeObserver(entries => { sendHeight(); });
   resizeObserver.observe(document.body);
 
+  // Inicializa
   renderEditorInputs();
   renderPreview();
   generateCode();
+  
+  // Garante que o resize rode ao iniciar
+  setTimeout(sendHeight, 100);
 </script>
 </body>
 </html>
