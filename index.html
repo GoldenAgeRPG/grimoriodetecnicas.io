@@ -634,6 +634,13 @@
     }
   }
 
+  // --- AUTO-RESIZE IFRAME (ADIÇÃO) ---
+  // Isso enviará a altura do documento para o fórum/pai a cada vez que o tamanho mudar
+  const resizeObserver = new ResizeObserver(entries => {
+    window.parent.postMessage(document.body.scrollHeight, "*");
+  });
+  resizeObserver.observe(document.body);
+
   renderEditorInputs();
   renderPreview();
   generateCode();
