@@ -18,13 +18,18 @@
     .ilimitado-header { text-align: center; padding: 40px 20px; background: linear-gradient(to bottom, #1a1a1a, #050505); border-bottom: 1px solid #333; }
     .ilimitado-title { font-family: 'Yuji Syuku', serif; font-size: 3em; color: #fff; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 20px rgba(255,255,255,0.2); margin-bottom: 10px; line-height: 1; }
     .ilimitado-subtitle { font-family: 'Inter', sans-serif; font-size: 0.9em; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-    .ilimitado-divider { height: 2px; width: 60px; background: #a855f7; margin: 25px auto 0 auto; box-shadow: 0 0 10px #a855f7; }
+    /* Divider agora é controlado via inline style no JS */
+    .ilimitado-divider { height: 2px; width: 60px; margin: 25px auto 0 auto; } 
+    
     .ilimitado-intro { padding: 40px; display: grid; grid-template-columns: 300px 1fr; gap: 40px; align-items: center; border-bottom: 1px solid #222; }
     .ilimitado-image-container { position: relative; border-radius: 8px; overflow: hidden; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: fit-content; margin: 0 auto; }
     .ilimitado-technique-image { display: block; width: 100%; max-width: 300px; height: auto; transition: transform 0.5s; }
     .ilimitado-image-glow { position: absolute; inset: 0; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 100%); pointer-events: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; }
+    
     .ilimitado-tags { display: flex; gap: 10px; flex-wrap: wrap; }
-    .ilimitado-tag { font-size: 0.75em; text-transform: uppercase; font-weight: 700; color: #fff; background: #222; padding: 6px 12px; border-radius: 4px; border: 1px solid #444; letter-spacing: 1px; }
+    /* Tag style base, cores via inline */
+    .ilimitado-tag { font-size: 0.75em; text-transform: uppercase; font-weight: 700; background: #111; padding: 6px 12px; border-radius: 4px; border: 1px solid #444; letter-spacing: 1px; }
+    
     .ilimitado-description { font-size: 0.95em; color: #aaa; line-height: 1.8; margin: 0; text-align: justify; }
     .ilimitado-techniques { padding: 40px; display: flex; flex-direction: column; gap: 40px; }
     .ilimitado-technique-card { background: #0a0a0a; border: 1px solid #222; border-radius: 12px; overflow: hidden; display: grid; grid-template-columns: 250px 1fr; transition: all 0.3s ease; position: relative; }
@@ -135,17 +140,6 @@
     .row { display: flex; gap: 10px; }
     .col { flex: 1; }
 
-    .tags-input-container {
-      background: #0a0a0d; border: 1px solid var(--ui-border); border-radius: 6px; padding: 5px;
-      display: flex; flex-wrap: wrap; gap: 5px;
-    }
-    .tag-chip {
-      background: #333; font-size: 0.75em; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 5px;
-    }
-    .tag-chip span { cursor: pointer; color: #ff6b6b; font-weight: bold; }
-    #tag-input { border: none; background: transparent; padding: 5px; flex: 1; min-width: 60px; }
-    #tag-input:focus { border: none; outline: none; }
-
     /* Cards de Sub-Técnica */
     .tech-builder-item {
       background: #25252e; border: 1px solid var(--ui-border); border-radius: 8px;
@@ -226,6 +220,14 @@
             <label>Nome da Técnica Principal</label>
             <input type="text" id="inp-main-title" oninput="updateState('title', this.value)" placeholder="Ex: Ilimitado">
           </div>
+
+          <div class="input-group">
+             <label>Cor Principal (Tema)</label>
+             <div class="hex-picker-wrapper">
+                 <input type="color" id="inp-main-color" oninput="updateState('mainColor', this.value)">
+                 <input type="text" id="inp-main-color-text" oninput="updateState('mainColor', this.value)" style="width:100px;">
+             </div>
+          </div>
           
           <div class="input-group">
             <label>Subtítulo / Clã</label>
@@ -302,6 +304,7 @@
     title: "Nome da Técnica",
     subtitle: "Origem • Tipo",
     img: "https://i.imgur.com/placeholder.jpg",
+    mainColor: "#a855f7", // Nova variável global de cor
     tags: { type: "Linhagem", quest: "Quest: Do Meu Sangue", req: "20" },
     desc: "Descrição geral da técnica e seu funcionamento básico.",
     subTechs: [
@@ -331,6 +334,7 @@
   if (savedData) {
       try {
           state = JSON.parse(savedData);
+          if(!state.mainColor) state.mainColor = "#a855f7"; // Fallback para estados antigos
       } catch (e) {
           state = JSON.parse(JSON.stringify(defaultState));
       }
@@ -371,6 +375,13 @@
   function updateState(field, value) {
     state[field] = value;
     saveLocal(); // Salva
+    
+    // Se mudou a cor principal, atualiza os inputs do editor
+    if(field === 'mainColor') {
+        document.getElementById('inp-main-color').value = value;
+        document.getElementById('inp-main-color-text').value = value;
+    }
+
     renderPreview();
     generateCode();
     sendHeight();
@@ -408,7 +419,7 @@
       img: "",
       cost: "0",
       costLabel: "EA",
-      color: "#a855f7",
+      color: state.mainColor, // Herda a cor principal ao criar
       range: "-",
       duration: "-",
       cooldown: "-",
@@ -478,6 +489,11 @@
     document.getElementById('inp-main-desc').value = state.desc;
     document.getElementById('tag-type').value = state.tags.type;
     document.getElementById('tag-req').value = state.tags.req;
+    
+    // Inputs de Cor Principal
+    document.getElementById('inp-main-color').value = state.mainColor;
+    document.getElementById('inp-main-color-text').value = state.mainColor;
+
     renderTechList();
   }
 
@@ -539,21 +555,23 @@
 
   function renderPreview() {
     const container = document.getElementById('preview-box');
+    const mainHex = state.mainColor;
     
+    // Inline styles para as tags principais usando a cor global
     const tagsHTML = `
-        <div class="ilimitado-tag">${state.tags.type}</div>
-        <div class="ilimitado-tag">Quest: Do Meu Sangue</div>
-        <div class="ilimitado-tag">Feitiços: ${state.tags.req}</div>
+        <div class="ilimitado-tag" style="border-color:${mainHex}; color:${mainHex};">${state.tags.type}</div>
+        <div class="ilimitado-tag" style="border-color:${mainHex}; color:${mainHex};">Quest: Do Meu Sangue</div>
+        <div class="ilimitado-tag" style="border-color:${mainHex}; color:${mainHex};">Feitiços: ${state.tags.req}</div>
     `;
 
     let techniquesHTML = '';
     state.subTechs.forEach(t => {
       let featuresHTML = '';
       t.features.forEach(f => {
-        featuresHTML += `<div class="ilimitado-feature"><div style="color:#ccc;line-height:1.6"><strong style="color:#fff">${f.title}:</strong> ${f.text}</div></div>`;
+        featuresHTML += `<div class="ilimitado-feature"><div style="color:#ccc;line-height:1.6"><strong style="color:${t.color}">${f.title}:</strong> ${f.text}</div></div>`;
       });
 
-      const imgHTML = t.img ? `<div style="display:flex;align-items:center;justify-content:center"><div class="ilimitado-image-container"><img src="${t.img}" alt="${t.name}" class="ilimitado-technique-image" style="max-width:180px"><div class="ilimitado-image-glow"></div></div></div>` : '';
+      const imgHTML = t.img ? `<div style="display:flex;align-items:center;justify-content:center"><div class="ilimitado-image-container"><img src="${t.img}" alt="${t.name}" class="ilimitado-technique-image" style="max-width:180px"><div class="ilimitado-image-glow" style="background: radial-gradient(circle, ${t.color}4D, transparent 70%);"></div></div></div>` : '';
 
       const hex = t.color || '#a855f7';
       const bgStyle = `linear-gradient(135deg, ${hex}1A, ${hex}05)`;
@@ -570,9 +588,9 @@
                 <h3 style="margin:0; color:${hex}; font-size:1.5em; text-shadow:${textShadow};">${t.name}</h3>
                 <span style="font-size:0.9em;opacity:0.8">${t.kanji}</span>
               </div>
-              <div class="ilimitado-cost-card">
+              <div class="ilimitado-cost-card" style="border-color:${hex} !important;">
                 <span class="ilimitado-cost-amount" style="color:${hex};">${t.cost}</span>
-                <span class="ilimitado-cost-label">${t.costLabel}</span>
+                <span class="ilimitado-cost-label" style="color:${hex};">${t.costLabel}</span>
               </div>
             </div>
           </div>
@@ -584,20 +602,21 @@
             </div>
             <p class="ilimitado-description">${t.desc.replace(/\n/g, '<br>')}</p>
             <div style="display:flex;flex-direction:column;gap:18px;margin-bottom:25px">${featuresHTML}</div>
-            <div class="ilimitado-requirements"><strong style="color:#fff">Requisitos:</strong> ${t.req}</div>
+            <div class="ilimitado-requirements"><strong style="color:${hex}">Requisitos:</strong> ${t.req}</div>
           </div>
         </div>`;
     });
 
+    // Injeção de estilos no container principal
     const html = `
       <div class="ilimitado-container">
         <div class="ilimitado-header">
           <div class="ilimitado-title">${state.title}</div>
           <div class="ilimitado-subtitle">${state.subtitle}</div>
-          <div class="ilimitado-divider"></div>
+          <div class="ilimitado-divider" style="background: ${mainHex}; box-shadow: 0 0 10px ${mainHex};"></div>
         </div>
         <div class="ilimitado-intro">
-          ${state.img ? `<div style="display:flex;align-items:center;justify-content:center"><div class="ilimitado-image-container"><img src="${state.img}" alt="${state.title}" class="ilimitado-technique-image"><div class="ilimitado-image-glow"></div></div></div>` : ''}
+          ${state.img ? `<div style="display:flex;align-items:center;justify-content:center"><div class="ilimitado-image-container"><img src="${state.img}" alt="${state.title}" class="ilimitado-technique-image"><div class="ilimitado-image-glow" style="background: radial-gradient(circle, ${mainHex}80, transparent 70%);"></div></div></div>` : ''}
           <div style="display:flex;flex-direction:column;gap:20px">
             <div class="ilimitado-tags">${tagsHTML}</div>
             <p class="ilimitado-description">${state.desc.replace(/\n/g, '<br>')}</p>
@@ -612,6 +631,7 @@
   function generateCode() {
     const container = document.getElementById('preview-box');
     const coreHTML = container.innerHTML;
+    // O código gerado agora incluirá os estilos inline, tornando-o independente
     const fullHTML = `<html lang="pt-br"><head><link rel="stylesheet" href="https://gaaaaaaaaabs.github.io/goldenagerepositor.io/ilimitado-technique.css"></head><body>${coreHTML}</body></html>`;
     const minified = fullHTML.replace(/(\r\n|\n|\r)/gm, "").replace(/\s+/g, ' ').replace(/> </g, '><');
     document.getElementById('output-code').value = minified;
@@ -630,6 +650,27 @@
     const parser = new DOMParser();
     const doc = parser.parseFromString(code, 'text/html');
 
+    // TENTA DESCOBRIR A COR PRINCIPAL
+    // 1. Procura estilo inline no divisor
+    let importedColor = "#a855f7";
+    const divider = doc.querySelector('.ilimitado-divider');
+    if(divider && divider.style.background) {
+        importedColor = divider.style.background;
+    } else {
+        // 2. Se não achar, varre a tag style procurando um Hex repetido (ex: o rosa do Hisoka)
+        const styleTag = doc.querySelector('style');
+        if(styleTag) {
+            // Regex simples para achar hex code de background ou color
+            const match = styleTag.innerHTML.match(/#([0-9a-fA-F]{6})/);
+            if(match) importedColor = match[0];
+            
+            // Regex mais específica para o divider se existir no CSS
+            const divMatch = styleTag.innerHTML.match(/\.ilimitado-divider\s*\{[^}]*background:[^}]*(#[0-9a-fA-F]{6})/i);
+            if(divMatch) importedColor = divMatch[1];
+        }
+    }
+    state.mainColor = importedColor;
+
     state.title = doc.querySelector('.ilimitado-title')?.textContent || '';
     state.subtitle = doc.querySelector('.ilimitado-subtitle')?.textContent || '';
     state.img = doc.querySelector('.ilimitado-intro .ilimitado-technique-image')?.src || '';
@@ -641,8 +682,10 @@
 
     state.subTechs = [];
     doc.querySelectorAll('.ilimitado-technique-card').forEach(card => {
-      let color = "#a855f7"; 
+      let color = state.mainColor; // Default é a cor principal importada
       const h3 = card.querySelector('h3');
+      
+      // Checa se tem cor inline
       if(h3 && h3.style.color) {
           color = h3.style.color;
           if(color.startsWith('rgb')) {
